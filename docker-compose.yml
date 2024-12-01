@@ -3,25 +3,36 @@ services:
   backend:
     container_name: backend-container
     build:
-      context: ./backend # Cambié a './backend' para que busque en el directorio correcto
-      dockerfile: Dockerfile # Asegúrate de que el nombre del archivo sea correcto
+      context: ./backend  # Directorio del backend
+      # No es necesario especificar 'dockerfile' si el archivo se llama 'Dockerfile'
     ports:
       - "5000:5000"
+    networks:
+      - my-network
     volumes:
-      - .:/app
+      - ./backend:/app  # Montar el directorio del backend, no todo el proyecto
     environment:
       NODE_ENV: development
+      # Otras variables de entorno para la configuración de la base de datos, API, etc.
+      API_URL: http://localhost:5000
 
   frontend:
     container_name: frontend-container
     build:
-      context: ./frontend
-      dockerfile: Dockerfile # Asegúrate de que el archivo se llame Dockerfile
+      context: ./frontend  # Directorio del frontend
+      # No es necesario especificar 'dockerfile' si el archivo se llama 'Dockerfile'
     ports:
       - "8080:80"
+    networks:
+      - my-network
     volumes:
-      - ./frontend:/app
+      - ./frontend:/app  # Montar el directorio del frontend
     environment:
       NODE_ENV: development
+      BACKEND_URL: http://backend-container:5000  # URL del backend para la comunicación
     depends_on:
-      - backend
+      - backend  # Espera a que el backend esté levantado antes de iniciar el frontend
+
+networks:
+  my-network:
+    driver: bridge  # Asegúrate de que ambos servicios estén en la misma red para que se comuniquen entre sí

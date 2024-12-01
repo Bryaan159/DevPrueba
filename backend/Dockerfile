@@ -1,21 +1,17 @@
-# Usar una imagen base de Node.js
 FROM node:20.9.0
-
-# Establecer el directorio de trabajo
 WORKDIR /app
 
-# Copiar el archivo package.json
+# Copiar solo los archivos de dependencias primero
 COPY package*.json ./
-COPY server.js ./
 
 # Instalar dependencias
 RUN npm install
 
-# Copiar el resto del proyecto
+# Copiar el resto del código
 COPY . .
 
-# Exponer el puerto que la aplicación usará
+# Exponer el puerto
 EXPOSE 5000
 
 # Comando para iniciar la aplicación
-CMD ["node", "server.js"]
+CMD ["npm", "start"]
