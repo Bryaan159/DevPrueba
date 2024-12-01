@@ -1,0 +1,27 @@
+version: '3'
+services:
+  backend:
+    container_name: backend-container
+    build:
+      context: ./backend # Cambié a './backend' para que busque en el directorio correcto
+      dockerfile: Dockerfile # Asegúrate de que el nombre del archivo sea correcto
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+    environment:
+      NODE_ENV: development
+
+  frontend:
+    container_name: frontend-container
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile # Asegúrate de que el archivo se llame Dockerfile
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend:/app
+    environment:
+      NODE_ENV: development
+    depends_on:
+      - backend

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recetas Dinámicas</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+
+    header {
+      background-color: #ff6347;
+      color: white;
+      padding: 1em;
+      text-align: center;
+    }
+
+    main {
+      padding: 1em;
+    }
+
+    section {
+      margin-bottom: 2em;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 2em;
+    }
+
+    form input, form textarea {
+      margin-bottom: 1em;
+      padding: 0.5em;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    form button {
+      padding: 0.5em;
+      background-color: #ff6347;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    form button:hover {
+      background-color: #e5533f;
+    }
+
+    #recetas-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1em;
+    }
+
+    .receta-card {
+      background-color: #ffffff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 1em;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s ease;
+      position: relative;
+    }
+
+    .receta-card:hover {
+      transform: scale(1.05);
+    }
+
+    .receta-card h3 {
+      margin: 0 0 0.5em;
+      font-size: 1.2em;
+      color: #ff6347;
+    }
+
+    .receta-card p {
+      margin: 0.5em 0;
+      font-size: 1em;
+      color: #555;
+    }
+
+    .receta-card button {
+      position: absolute;
+      bottom: 1em;
+      right: 1em;
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 0.5em;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .receta-card button:hover {
+      background-color: #c82333;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Recetas Dinámicas</h1>
+  </header>
+  <main>
+    <section id="add-receta">
+      <h2>Agregar Nueva Receta</h2>
+      <form id="receta-form">
+        <input type="text" id="titulo" placeholder="Título de la receta" required />
+        <textarea id="ingredientes" placeholder="Ingredientes (separados por comas)" required></textarea>
+        <textarea id="proceso" placeholder="Proceso (pasos a seguir)" required></textarea>
+        <button type="submit">Agregar</button>
+      </form>
+    </section>
+
+    <section id="recetas-list">
+      <h2>Recetas</h2>
+      <div id="recetas-container">
+        <!-- Aquí se mostrarán las recetas dinámicamente -->
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const recetasContainer = document.getElementById("recetas-container");
+    const recetaForm = document.getElementById("receta-form");
+
+    // Función para mostrar las recetas como cards, ahora con botón de eliminar
+    function renderReceta(id, titulo, ingredientes, proceso) {
+      const recetaCard = document.createElement("div");
+      recetaCard.className = "receta-card";
+      recetaCard.innerHTML = `
+        <h3>${titulo}</h3>
+        <p><strong>Ingredientes:</strong> ${ingredientes}</p>
+        <p><strong>Proceso:</strong> ${proceso}</p>
+        <button class="eliminar-btn" data-id="${id}">Eliminar</button>
+      `;
+
+      // Botón de eliminar
+      const eliminarBtn = recetaCard.querySelector(".eliminar-btn");
+      eliminarBtn.addEventListener("click", async () => {
+        const recetaId = eliminarBtn.getAttribute("data-id");
+
+        if (confirm("¿Estás seguro de que deseas eliminar esta receta?")) {
+          try {
+            const response = await axios.delete(`http://localhost:5000/recetas/${recetaId}`);
+            if (response.status === 200) {
+              recetasContainer.removeChild(recetaCard); // Elimina la card del DOM
+              alert("Receta eliminada correctamente.");
+            } else {
+              alert(`Error al eliminar la receta: ${response.statusText}`);
+            }
+          } catch (error) {
+            alert(`Error al eliminar la receta: ${error.response ? error.response.data.message : error.message}`);
+          }
+        }
+      });
+
+      recetasContainer.appendChild(recetaCard);
+    }
+
+    // Obtener recetas desde el backend
+    async function fetchRecetas() {
+      try {
+        const response = await axios.get("http://localhost:5000/recetas");
+        const recetas = response.data;
+        recetas.forEach(receta => {
+          renderReceta(receta._id, receta.titulo, receta.ingredientes, receta.proceso);
+        });
+      } catch (error) {
+        console.error("Error al obtener recetas:", error);
+      }
+    }
+
+    // Función para manejar el evento de agregar receta
+    recetaForm.addEventListener("submit", async (event) => {
+      event.preventDefault(); // Evitar recargar la página
+
+      const titulo = document.getElementById("titulo").value.trim();
+      const ingredientes = document.getElementById("ingredientes").value.trim();
+      const proceso = document.getElementById("proceso").value.trim();
+
+      if (titulo && ingredientes && proceso) {
+        try {
+          // Enviar la receta al backend
+          const response = await axios.post("http://localhost:5000/recetas", {
+            titulo,
+            ingredientes,
+            proceso
+          });
+
+          if (response.status === 200) {
+            renderReceta(response.data.insertedId, titulo, ingredientes, proceso); // Mostrar la receta
+            recetaForm.reset(); // Limpiar el formulario
+          } else {
+            alert(`Error al agregar la receta: ${response.statusText}`);
+          }
+        } catch (error) {
+          alert(`Error al agregar la receta: ${error.response ? error.response.data.message : error.message}`);
+        }
+      } else {
+        alert("Por favor, completa todos los campos.");
+      }
+    });
+
+    // Cargar las recetas al iniciar la página
+    window.onload = fetchRecetas;
+  </script>
+</body>
+</html>
