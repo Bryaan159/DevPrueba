@@ -1,0 +1,61 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Install dependencies
+      run: npm install
+      working-directory: ./backend  # Ajusta según sea necesario
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Set up Docker Compose
+      run: |
+        sudo apt-get update
+        sudo apt-get install docker-compose -y
+
+    - name: Build Docker images
+      run: docker-compose -f docker-compose.yml build
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v3
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.SSHPRIVATE }}
+
+      - name: Deploy on Azure VM
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.USER_NAME }}@${{ secrets.IP_VM }} << 'EOF'
+          cd /home/${{ secrets.USER_NAME }}/DevPrueba/
+          git pull origin main
+          sudo docker-compose down --remove-orphans
+          sudo docker-compose pull
+          sudo docker-compose build --no-cache
+          sudo docker-compose up -d --force-recreate --remove-orphans
+          EOF
+        env:
+          SSH_PRIVATE_KEY: ${{  secrets.SSHPRIVATE }}
+        shell: bash
