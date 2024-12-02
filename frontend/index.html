@@ -148,7 +148,7 @@
 
         if (confirm("¿Estás seguro de que deseas eliminar esta receta?")) {
           try {
-            const response = await axios.delete(`http://localhost:5000/recetas/${recetaId}`);
+            const response = await axios.delete(`http://52.143.66.112:5000/recetas/${recetaId}`);
             if (response.status === 200) {
               recetasContainer.removeChild(recetaCard); // Elimina la card del DOM
               alert("Receta eliminada correctamente.");
@@ -167,7 +167,7 @@
     // Obtener recetas desde el backend
     async function fetchRecetas() {
       try {
-        const response = await axios.get("http://localhost:5000/recetas");
+        const response = await axios.get("http://52.143.66.112:5000/recetas");
         const recetas = response.data;
         recetas.forEach(receta => {
           renderReceta(receta._id, receta.titulo, receta.ingredientes, receta.proceso);
@@ -188,7 +188,7 @@
       if (titulo && ingredientes && proceso) {
         try {
           // Enviar la receta al backend
-          const response = await axios.post("http://localhost:5000/recetas", {
+          const response = await axios.post("http://52.143.66.112:5000/recetas", {
             titulo,
             ingredientes,
             proceso
